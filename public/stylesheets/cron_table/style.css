@@ -1,0 +1,90 @@
+/** layout */
+header{
+    background-color: #555273;
+    height: 72px;
+    width: 100%;
+    line-height: 72px;
+    color: #b6d5e1;
+}
+
+footer{
+    background-color: #555273;
+    height: 36px;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.8);
+    position:absolute;
+    #bottom:0;
+}
+
+.wrapper{
+    margin-top:20px;
+}
+
+body{
+    color: #555273;
+}
+
+#cron_table, #cron_table th, #cron_table td{
+border-color:#b6d5e1;
+}
+
+#cron_table thead th, #cron_table thead td{
+border-color:#e2eff1;
+}
+
+#cron_table thead{
+    background-color: #b6d5e1;
+}
+
+#cron_table tbody tr:nth-of-type(odd){
+    background-color: #e2eff1;
+}
+
+.title{
+    font-size:2.6em;
+    letter-spacing:0.036em;
+}
+    .title a{
+        color:#ccc;
+        text-decoration:none;
+    }
+
+/** show **/
+
+#cron_table{
+    width:1940px;
+}
+
+td.schedule_cell {
+    position:relative;
+    width:60px;
+    padding:0px !important;
+}
+
+#cron_table td{
+    padding:3px;
+}
+
+.schedule_on{
+    position:absolute;
+    float:left;
+
+    width:1px;
+    height:26px;
+    background-color:#555273;
+}
+
+.cron_cell{
+    white-space:nowrap;
+}
+
+
+/** edit **/
+.edit_form{
+    width:800px;
+    padding-left:100px;
+}
+
+.btn-save{
+    padding:10px 40px;
+}

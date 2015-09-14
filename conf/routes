@@ -2,8 +2,15 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
+# top
 GET     /                           controllers.Application.index
+
+# cron_table
+GET     /cron_table                 controllers.CronTableC.index
+GET     /cron_table/create          controllers.CronTableC.create
+POST    /cron_table/save            controllers.CronTableC.save
+GET     /cron_table/show/:cronHash  controllers.CronTableC.show(cronHash:String)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

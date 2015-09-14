@@ -1,0 +1,41 @@
+@()
+
+@layout("表示") {
+
+<script>
+$(document).ready(function() {
+  $('#cron_table').tablefix({width: 1200, height: 550, fixRows: 2, fixCols: 1});
+});
+
+</script>
+
+<table id="cron_table" class="table table-bordered table-striped">
+  <thead>
+  <tr>
+    <th rowspan="2" style="width:300px;">コマンド</th>
+    <th rowspan="2" style="width:200px;">タイミング設定</th>
+    <th colspan="24">スケジュール</th>
+  </tr>
+  <tr>
+    {% for i in hours %}
+    <th>{{i}}</th>
+    {% endfor %}
+  </tr>
+  </thead>
+  {% for l in lines %}
+  <tr>
+    <td class="cron_cell">{{l.command|truncatechars:45}}</td>
+    <td class="cron_cell">{{l.minute}} {{l.hour}} {{l.day}} {{l.month}} {{l.week}}</td>
+    {% for i in hours %}
+    <td class="schedule_cell">
+      {% if i in l.calc_hours %}
+      {% for m in l.calc_minutes %}
+      <div class="schedule_on" style="left:{{ m }}px;"></div>
+      {% endfor %}
+      {% endif %}
+    </td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+}
