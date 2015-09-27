@@ -71,7 +71,7 @@ directory "create work dir" do
   group "#{node[:user]}"
 end
 
-execute "mysql -uroot -e \"CREATE DATABASE if not exists ketsuco CHARACTER SET utf8;\""
+  execute "mysql -uroot -e \"CREATE DATABASE if not exists ketsuco CHARACTER SET utf8;\""
 execute "mysql -uroot -e \"GRANT ALL ON ketsuco.* to ketsuco@localhost;\""
 execute "mysql -uroot -e \"FLUSH PRIVILEGES;\""
 
