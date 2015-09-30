@@ -1,16 +1,15 @@
 package controllers
 
-import models.Cron
-import org.joda.time.{DateTime, LocalDate}
-import play.api.mvc._
-import play.api.data._
-import play.api.data.Forms._
-import javax.inject.Inject
-import play.api.i18n._
-
 import java.security.MessageDigest
+import javax.inject.Inject
 
 import form.CronForm
+import models.{Cron, CronLine}
+import org.joda.time.DateTime
+import play.api.data.Forms._
+import play.api.data._
+import play.api.i18n._
+import play.api.mvc._
 
 class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with I18nSupport{
 
@@ -42,13 +41,40 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
       //      raise Exception("too big text")
     }
 
-    val body = Some(cronText)
+    val cronBody = Some(cronText)
     val now = Some(DateTime.now())
     val hashBytes = MessageDigest.getInstance("SHA-256").digest(now.toString.getBytes)
     val hash = Some(hashBytes.map("%02x".format(_)).mkString)
 
-    val cron = Cron.create(body, hash, now, now)
-//    cron.hash = hashlib.sha256(str(datetime.now())).hexdigest()
+    val cron = Cron.create(cronBody, hash, now, now)
+
+    for ((lineRaw, i) <- cronTextLines.zipWithIndex){
+      // 連続した空白はタブを一つのスペースに置換
+      val lineText = lineRaw.trim.replaceAll("\\s{1,}", " ")
+      if (!lineText.isEmpty) {
+        println(lineText)
+        val isComment = lineText.startsWith("#")
+        val isSetting = lineText.contains("=")
+        val isCronLine = !isComment && !isSetting
+        // TODO コメントも直後の行を説明するものとして保存しておきたい。(DSL)
+        if (isCronLine) {
+          val elements = lineText.split(" ")
+          CronLine.create(
+            cronId = cron.id,
+            line = Some(i),
+            body = Some(lineText),
+            command = Some(elements.slice(5, 1000).mkString(" ")),
+            month = Some(elements(3)),
+            day = Some(elements(2)),
+            week = Some(elements(4)),
+            hour = Some(elements(1)),
+            minute = Some(elements(0)),
+            createdAt = now,
+            updatedAt = now
+          )
+        }
+      }
+    }
 
     Ok(views.html.cron_table.show())
   }
