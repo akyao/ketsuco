@@ -1,13 +1,16 @@
-@()
+@(f:Form[form.CronForm])(implicit messages: Messages)
+
+@import play.api.i18n.Messages.Implicits._
 
 @layout("作成") {
 
 <div class="container">
   <div class="edit_form">
-    @helper.form(action = routes.CronTableC.save()) {
+    @helper.form(action = routes.CronTableC.save) {
     <div class="form-group">
       <label for="cron_text" class="control-label">cron (crontabの内容をそのまま貼り付けてください)</label>
-      <textarea id="cron_text" class="form-control" name="cron_text" rows="16"></textarea>
+        @helper.textarea(f("cronText"), 'id -> "cron_text", 'rows -> 16, 'class -> "form-control")
+      <!--<textarea id="cron_text" class="form-control" name="cronText" rows="16"></textarea>-->
     </div>
 
     <div class="text-center">
