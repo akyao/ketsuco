@@ -3,8 +3,8 @@ CREATE TABLE cron(
    id bigint(20) NOT NULL AUTO_INCREMENT,
    body text,
    hash varchar(64),
-   created_at date,
-   updated_at date,
+   created_at datetime,
+   updated_at datetime,
    PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -19,8 +19,8 @@ CREATE TABLE cron_line(
    week varchar(1024),
    hour varchar(1024),
    minute varchar(1024),
-   created_at date,
-   updated_at date,
+   created_at datetime,
+   updated_at datetime,
    PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARACTER SET utf8;
 

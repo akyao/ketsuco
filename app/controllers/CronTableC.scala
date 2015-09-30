@@ -1,10 +1,14 @@
 package controllers
 
+import models.Cron
+import org.joda.time.{DateTime, LocalDate}
 import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
 import javax.inject.Inject
 import play.api.i18n._
+
+import java.security.MessageDigest
 
 import form.CronForm
 
@@ -25,21 +29,26 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
   )
 
   def save = Action {implicit request =>
-    // TODO form postにしようとすると bindFromRequestじゃなくなって辛い
-    val cronText = form.bindFromRequest.get
 
+    val cronForm = form.bindFromRequest.get
+    val cronText = cronForm.cronText
+    val cronTextLines = cronText.split("\n")
 
+// TODO validation
 //    if len(cron_text) > 16384:
 //      raise Exception("too big text")
 //
-//    cron_text_lines = cron_text.splitlines()
-//    if len(cron_text_lines) > 1000:
-//      raise Exception("too big text")
-//
-//    cron = Cron(body = cron_text)
-//    cron.hash = hashlib.sha256(str(datetime.now())).hexdigest()
-//    cron.save()
+    if (cronTextLines.length > 1000){
+      //      raise Exception("too big text")
+    }
 
+    val body = Some(cronText)
+    val now = Some(DateTime.now())
+    val hashBytes = MessageDigest.getInstance("SHA-256").digest(now.toString.getBytes)
+    val hash = Some(hashBytes.map("%02x".format(_)).mkString)
+
+    val cron = Cron.create(body, hash, now, now)
+//    cron.hash = hashlib.sha256(str(datetime.now())).hexdigest()
 
     Ok(views.html.cron_table.show())
   }
