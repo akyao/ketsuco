@@ -1,4 +1,6 @@
-@()
+@(cron: models.Cron, cronLines: List[models.CronLine])
+
+@import _root_.helpers._
 
 @layout("表示") {
 
@@ -17,25 +19,25 @@ $(document).ready(function() {
     <th colspan="24">スケジュール</th>
   </tr>
   <tr>
-    {% for i in hours %}
-    <th>{{i}}</th>
-    {% endfor %}
+    @for(i <- Range(0, 24)) {
+    <th>@i</th>
+    }
   </tr>
   </thead>
-  {% for l in lines %}
+  @for(l <- cronLines) {
   <tr>
-    <td class="cron_cell">{{l.command|truncatechars:45}}</td>
-    <td class="cron_cell">{{l.minute}} {{l.hour}} {{l.day}} {{l.month}} {{l.week}}</td>
-    {% for i in hours %}
+    <td class="cron_cell">@l.command</td>
+    <td class="cron_cell">@l.minute @l.hour @l.day @l.month @l.week</td>
+    @for(i <- Range(0, 24)) {
     <td class="schedule_cell">
-      {% if i in l.calc_hours %}
-      {% for m in l.calc_minutes %}
-      <div class="schedule_on" style="left:{{ m }}px;"></div>
-      {% endfor %}
-      {% endif %}
+      @if(CronTimeHelper.calcTimes(l.hour.get, 24).contains(i)) {
+      @for(m <- CronTimeHelper.calcTimes(l.minute.get, 60)) {
+      <div class="schedule_on" style="left:@{m}px;"></div>
+      }
+      }
     </td>
-    {% endfor %}
+    }
   </tr>
-  {% endfor %}
+  }
 </table>
 }

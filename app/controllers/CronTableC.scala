@@ -10,11 +10,19 @@ import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n._
 import play.api.mvc._
+import scalikejdbc._
 
 class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with I18nSupport{
 
   def index = Action {
     Ok(views.html.cron_table.index())
+  }
+
+  def show(cronHash: String) = Action {
+    // TODO あること
+    val cron = Cron.findBy(sqls.eq(Cron.syntax("c").hash, cronHash))
+    val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.get.id))
+    Ok(views.html.cron_table.show(cron.get, cronLines))
   }
 
   def create = Action {
@@ -52,7 +60,6 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
       // 連続した空白はタブを一つのスペースに置換
       val lineText = lineRaw.trim.replaceAll("\\s{1,}", " ")
       if (!lineText.isEmpty) {
-        println(lineText)
         val isComment = lineText.startsWith("#")
         val isSetting = lineText.contains("=")
         val isCronLine = !isComment && !isSetting
@@ -76,10 +83,7 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
       }
     }
 
-    Ok(views.html.cron_table.show())
-  }
-
-  def show(cronHash: String) = Action {
-    Ok(views.html.cron_table.show())
+    val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.id))
+    Ok(views.html.cron_table.show(cron, cronLines))
   }
 }
