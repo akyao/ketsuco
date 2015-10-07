@@ -13,14 +13,14 @@ import play.api.i18n._
 import play.api.mvc._
 import scalikejdbc._
 
-class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with I18nSupport{
+class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with I18nSupport {
 
   def index = Action {
     Ok(views.html.cron_table.index())
   }
 
   def show(cronHash: String) = Action {
-    // TODO あること
+    // TODO チェック！あること
     val cron = Cron.findBy(sqls.eq(Cron.syntax("c").hash, cronHash))
     val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.get.id))
     Ok(views.html.cron_table.show(cron.get, cronLines))
@@ -33,12 +33,16 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
   val form = Form(
     mapping(
       "cronText" -> nonEmptyText
-        .verifying("16384文字以内で入力してください。", {_.length <= 16384 })
-        .verifying("1行あたり200文字まで入力してください", {_.split("\n").exists(n => n.length <= 200) })
+        .verifying("16384文字以内で入力してください。", {
+        _.length <= 16384
+      })
+        .verifying("1行あたり200文字まで入力してください", {
+        _.split("\n").exists(n => n.length <= 200)
+      })
     )(CronForm.apply)(CronForm.unapply)
   )
 
-  def save = Action {implicit request =>
+  def save = Action { implicit request =>
 
     form.bindFromRequest.fold(
       formWithErrors => {
@@ -46,15 +50,20 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
       },
       formData => {
         val cronText = formData.cronText
-        val cron = save(cronText)
-
-        val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.id))
-        Ok(views.html.cron_table.show(cron, cronLines))
+        try {
+          val cron = save2(cronText)
+          val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.id))
+          Ok(views.html.cron_table.show(cron, cronLines))
+        } catch {
+          // バリデーションエラーの対応
+          case e: ValidatorException
+          => BadRequest(views.html.cron_table.edit(form.bindFromRequest.withError("cronText", e.getMessage)))
+        }
       }
     )
   }
 
-  def save(cronText: String): Cron = {
+  def save2(cronText: String): Cron = {
 
     val cronTextLines = cronText.split("\n")
     val cronBody = Some(cronText)
@@ -66,7 +75,7 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
 
       val cron = Cron.create(cronBody, hash, now, now)
 
-      for ((lineRaw, i) <- cronTextLines.zipWithIndex){
+      for ((lineRaw, i) <- cronTextLines.zipWithIndex) {
         // 連続した空白はタブを一つのスペースに置換
         val lineText = lineRaw.trim.replaceAll("\\s{1,}", " ")
         if (!lineText.isEmpty) {
@@ -77,19 +86,18 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
 
           if (isCronLine) {
             val elements = lineText.split(" ")
-            if (elements.length < 6 ) {
-              throw new RuntimeException("行目()がcronとして解釈不可能です.")
+            if (elements.length < 6) {
+              throw new ValidatorException("%d行目(%s)がcronとして解釈不可能です.".format(i, lineText))
             }
             // 解釈不可能な入力ははじく
             val minute = elements(0)
             val hour = elements(1)
             if (CronTimeHelper.calcTimes(minute, 60)._2) {
-              throw new RuntimeException("分の設定が解釈不可能です")
+              throw new ValidatorException("%d行目の(%s)が分の設定として解釈不可能です".format(i, minute))
             }
             if (CronTimeHelper.calcTimes(hour, 24)._2) {
-              throw new RuntimeException("時間の設定が解釈不可能です")
+              throw new ValidatorException("%d行目の(%s)が時間の設定として解釈不可能です".format(i, hour))
             }
-            // TODO エラーどげな感じでハンドリングすっかな。
 
             CronLine.create(
               cronId = cron.id,
@@ -111,4 +119,7 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
       return cron
     }
   }
+
+  class ValidatorException(msg: String) extends RuntimeException(msg)
+
 }
