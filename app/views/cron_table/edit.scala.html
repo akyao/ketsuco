@@ -9,7 +9,7 @@
     @helper.form(action = routes.CronTableC.save) {
     <div class="form-group">
       <label for="cron_text" class="control-label">cron (crontabの内容をそのまま貼り付けてください)</label>
-      @helper.textarea(f("cronText"), 'id -> "cron_text", 'rows -> 16, 'class -> "form-control")
+      @helper.textarea(f("cronText"), 'id -> "cron_text", 'rows -> 16, 'class -> "form-control", '_showConstraints -> false)
     </div>
 
     <div class="text-center">
