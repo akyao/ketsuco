@@ -20,10 +20,13 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
   }
 
   def show(cronHash: String) = Action {
-    // TODO チェック！あること
     val cron = Cron.findBy(sqls.eq(Cron.syntax("c").hash, cronHash))
-    val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.get.id))
-    Ok(views.html.cron_table.show(cron.get, cronLines))
+    if (cron.isEmpty) {
+      BadRequest("ないよ")
+    } else {
+      val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.get.id))
+      Ok(views.html.cron_table.show(cron.get, cronLines))
+    }
   }
 
   def create = Action {
