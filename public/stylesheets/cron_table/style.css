@@ -49,6 +49,18 @@ border-color:#e2eff1;
         text-decoration:none;
     }
 
+/** top **/
+.intro-header {
+    background: url(/assets/images/cron_table/jumbotron.jpg) no-repeat center center;
+    background-size: cover;
+    height:400px;
+    margin-top:-20px;
+}
+
+.content-section:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
 /** show **/
 
 #cron_table{
