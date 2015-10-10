@@ -25,11 +25,11 @@ body{
 }
 
 #cron_table, #cron_table th, #cron_table td{
-border-color:#b6d5e1;
+    border-color:#b6d5e1;
 }
 
 #cron_table thead th, #cron_table thead td{
-border-color:#e2eff1;
+    border-color:#e2eff1;
 }
 
 #cron_table thead{
@@ -57,8 +57,45 @@ border-color:#e2eff1;
     margin-top:-20px;
 }
 
+.intro-message{
+    padding-top:18px;
+}
+
+.intro-message h1{
+    color:white;
+}
+
+.intro-header .lp-link{
+    padding-top:24px;
+}
+
+.intro-header .lp-link a{
+    color:#428bca;
+    font-size:1.2em;
+}
+
+/**
+.intro-header .lp-link a:hover{
+    background-color: #ffffff;
+    opacity:0.8;
+}
+**/
+
+.intro-header .lp-link li{
+    list-style-type:none;
+}
+
 .content-section:nth-child(even) {
     background-color: #f8f8f8;
+}
+
+.lead {
+    margin-left:10px;
+}
+
+.lead li{
+    list-style-type:none;
+    font-size:1.2;
 }
 
 /** show **/

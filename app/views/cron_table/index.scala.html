@@ -6,11 +6,15 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-12">
-        <div class="lp-title intro-message">
-          <h1>Eradicate unRead It Later</h1>
+        <div class="lp-title intro-message" style="text-align:center;">
+          <h1>crontabの実行タイミングを可視化します!!!</h1>
         </div>
-        <li><a href="@routes.CronTableC.create()">作成する</a></li>
-        <li><a href="javascript:alert('TODO')">サンプルを見る</a></li>
+        <div class="row lp-link">
+          <div class="col-lg-4 col-lg-offset-8">
+            <li><a href="@routes.CronTableC.create()">可視化する!!!</a></li>
+            <li><a href="javascript:alert('TODO')">サンプルを見る!!!</a></li>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -23,9 +27,9 @@
         <div class="col-lg-6 col-sm-6">
           <div class="clearfix"></div>
           <h2 class="section-heading">使い方1 「cronの設定をコピーする」</h2>
-          <p class="lead">
+          <ul class="lead">
             <li>可視化したいcrontabの設定をまるごとコピーします</li>
-          </p>
+          </ul>
         </div>
         <div class="col-lg-4 col-lg-offset-2 col-sm-6">
           <img alt="" class="" src='@routes.Assets.versioned("images/cron_table/dummy200.jpg")' style="height:200px">
@@ -39,12 +43,12 @@
       <div class="row">
         <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
           <div class="clearfix"></div>
-          <h2 class="section-heading">使い方2.「貼り付ける」</h2>
-          <p class="lead">
+          <h2 class="section-heading">使い方2「貼り付ける」</h2>
+          <ul class="lead">
             <li><a href="">編集画面</a>を開きます。</li>
             <li>1でコピーしたテキストを貼り付けます</li>
             <li>「作成」ボタンを押します</li>
-          </p>
+          </ul>
         </div>
         <div class="col-lg-5 col-sm-pull-6  col-sm-6">
           <img alt="" class="" src='@routes.Assets.versioned("images/cron_table/dummy200.jpg")' style="height:200px">
@@ -59,10 +63,10 @@
       <div class="col-lg-6 col-sm-6">
         <div class="clearfix"></div>
         <h2 class="section-heading">使い方3 「見る」</h2>
-        <p class="lead">
+        <ul class="lead">
           <li>見ます</li>
           <li>以上!</li>
-        </p>
+        </ul>
       </div>
       <div class="col-lg-4 col-lg-offset-2 col-sm-6">
         <img alt="" class="" src='@routes.Assets.versioned("images/cron_table/dummy200.jpg")' style="height:200px">
