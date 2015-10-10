@@ -90,16 +90,16 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
           if (isCronLine) {
             val elements = lineText.split(" ")
             if (elements.length < 6) {
-              throw new ValidatorException("%d行目(%s)がcronとして解釈不可能です.".format(i, lineText))
+              throw new ValidatorException("%d行目(%s)がcronとして解釈不可能です.".format(i+1, lineText))
             }
             // 解釈不可能な入力ははじく
             val minute = elements(0)
             val hour = elements(1)
             if (CronTimeHelper.calcTimes(minute, 60)._2) {
-              throw new ValidatorException("%d行目の(%s)が分の設定として解釈不可能です".format(i, minute))
+              throw new ValidatorException("%d行目の(%s)が分の設定として解釈不可能です".format(i+1, minute))
             }
             if (CronTimeHelper.calcTimes(hour, 24)._2) {
-              throw new ValidatorException("%d行目の(%s)が時間の設定として解釈不可能です".format(i, hour))
+              throw new ValidatorException("%d行目の(%s)が時間の設定として解釈不可能です".format(i+1, hour))
             }
 
             CronLine.create(

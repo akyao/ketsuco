@@ -7,6 +7,15 @@ header{
     color: #b6d5e1;
 }
 
+body {
+    /** フッターがせり上がってこないように */
+    height:100%
+}
+
+.wrapper {
+    min-height:100%
+}
+
 footer{
     background-color: #555273;
     height: 36px;
@@ -59,6 +68,7 @@ body{
 
 .intro-message{
     padding-top:18px;
+    text-align:center;
 }
 
 .intro-message h1{
@@ -136,4 +146,10 @@ td.schedule_cell {
 
 .btn-save{
     padding:10px 40px;
+}
+
+dd.error{
+    font-size:1.4em;
+    font-weight: bold;
+    color: #f65068;
 }
