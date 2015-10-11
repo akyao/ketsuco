@@ -10,7 +10,6 @@
     <div class="form-group">
       @helper.textarea(f("cronText"),
         'id -> "cron_text",
-        'rows -> 16,
         'class -> "form-control",
         '_showConstraints -> false,
         '_label -> "cron( crontab -l )の内容をそのまま貼り付けてください")

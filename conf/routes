@@ -10,6 +10,7 @@ GET     /cron_table                 controllers.CronTableC.index
 GET     /cron_table/create          controllers.CronTableC.create
 POST    /cron_table/save            controllers.CronTableC.save
 GET     /cron_table/show/:cronHash  controllers.CronTableC.show(cronHash:String)
+GET     /cron_table/show/sample     controllers.CronTableC.sample
 
 
 # Map static resources from the /public folder to the /assets URL path

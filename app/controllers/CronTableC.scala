@@ -29,6 +29,10 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
     }
   }
 
+  def sample() = Action {
+    Redirect(routes.CronTableC.show("sample"))
+  }
+
   def create = Action {
     Ok(views.html.cron_table.edit(form))
   }

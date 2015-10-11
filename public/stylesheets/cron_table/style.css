@@ -153,3 +153,8 @@ dd.error{
     font-weight: bold;
     color: #f65068;
 }
+
+#cron_text{
+    overflow-y: scroll;
+    height:400px;
+}
