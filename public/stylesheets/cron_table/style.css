@@ -110,6 +110,10 @@ body{
 
 /** show **/
 
+#cron_table_area{
+    margin-bottom:20px;
+}
+
 #cron_table{
     width:1940px;
 }

@@ -6,11 +6,16 @@
 
 <script>
 $(document).ready(function() {
-  $('#cron_table').tablefix({width: 1200, height: 550, fixRows: 2, fixCols: 1});
+  var originHeightStr = $('#cron_table').css("height").replace(/px/, '');
+  var originHeight = parseInt(originHeightStr);
+  var newHeight = originHeight > 530 ? 550 : originHeight + 20;
+
+  $('#cron_table').tablefix({width: 1200, height: newHeight, fixRows: 2, fixCols: 1});
 });
 
 </script>
 
+<div id="cron_table_area">
 <table id="cron_table" class="table table-bordered table-striped">
   <thead>
   <tr>
@@ -40,6 +45,7 @@ $(document).ready(function() {
   </tr>
   }
 </table>
+</div>
 
 <textarea id="cron_text" class="form-control cron_original_text" readonly>@cron.body</textarea>
 }

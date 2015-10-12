@@ -7,17 +7,17 @@
 <div class="container">
   <div class="edit_form">
     @helper.form(action = routes.CronTableC.save) {
-    <div class="form-group">
-      @helper.textarea(f("cronText"),
-        'id -> "cron_text",
-        'class -> "form-control",
-        '_showConstraints -> false,
-        '_label -> "cron( crontab -l )の内容をそのまま貼り付けてください")
-    </div>
+      <div class="form-group">
+        @helper.textarea(f("cronText"),
+          'id -> "cron_text",
+          'class -> "form-control",
+          '_showConstraints -> false,
+          '_label -> "cron( crontab -l )の内容をそのまま貼り付けてください")
+      </div>
 
-    <div class="text-center">
-      <button type="submit" class="btn btn-info btn-save">作成する</button>
-    </div>
+      <div class="text-center">
+        <button type="submit" class="btn btn-info btn-save">作成する</button>
+      </div>
     }
   </div>
 </div>
