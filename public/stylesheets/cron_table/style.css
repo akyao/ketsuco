@@ -137,6 +137,10 @@ td.schedule_cell {
     white-space:nowrap;
 }
 
+.cron_original_text {
+    width:800px;
+
+}
 
 /** edit **/
 .edit_form{

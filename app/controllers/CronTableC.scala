@@ -60,6 +60,7 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
         try {
           val cron = save2(cronText)
           val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.id))
+          // TODO redirectで実現したい
           Ok(views.html.cron_table.show(cron, cronLines))
         } catch {
           // バリデーションエラーの対応
