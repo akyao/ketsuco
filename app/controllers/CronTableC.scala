@@ -59,9 +59,7 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
         val cronText = formData.cronText
         try {
           val cron = save2(cronText)
-          val cronLines = CronLine.findAllBy(sqls.eq(CronLine.syntax("cl").cronId, cron.id))
-          // TODO redirectで実現したい
-          Ok(views.html.cron_table.show(cron, cronLines))
+          Redirect(routes.CronTableC.show(cron.hash.get))
         } catch {
           // バリデーションエラーの対応
           case e: ValidatorException
