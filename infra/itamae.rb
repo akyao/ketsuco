@@ -29,22 +29,21 @@ directory "create ketsuco dir" do
   group "#{node[:user]}"
 end
 
-=begin
 
-package "bzip2-devel"
-package "openssl-devel"
-package "ncurses-devel"
-package "sqlite-devel"
-package "readline-devel"
+#package "bzip2-devel"
+#package "openssl-devel"
+#package "ncurses-devel"
+#package "sqlite-devel"
+#package "readline-devel"
 #package "tk-devel"
-package "gdbm-devel"
-package "db4-devel"
-package "libpcap-devel"
-package "xz-devel"
+#package "gdbm-devel"
+#package "db4-devel"
+#package "libpcap-devel"
+#package "xz-devel"
 
-package "libjpeg-devel"
-package "zlib-devel"
-package "git"
+#package "libjpeg-devel"
+#package "zlib-devel"
+#package "git"
 
 package 'http://dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm' do
   not_if 'rpm -q mysql-community-release-el6-5'
@@ -58,21 +57,14 @@ service 'mysqld' do
   action [:enable, :start]
 end
 
-service 'httpd' do
-  user "root"
-  action [:enable, :start]
-end
+#directory "create work dir" do
+#  action :create
+#  path "/home/#{node[:user]}/work"
+#  mode "777"
+#  owner "#{node[:user]}"
+#  group "#{node[:user]}"
+#end
 
-directory "create work dir" do
-  action :create
-  path "/home/#{node[:user]}/work"
-  mode "777"
-  owner "#{node[:user]}"
-  group "#{node[:user]}"
-end
-
-  execute "mysql -uroot -e \"CREATE DATABASE if not exists ketsuco CHARACTER SET utf8;\""
+execute "mysql -uroot -e \"CREATE DATABASE if not exists ketsuco CHARACTER SET utf8;\""
 execute "mysql -uroot -e \"GRANT ALL ON ketsuco.* to ketsuco@localhost;\""
 execute "mysql -uroot -e \"FLUSH PRIVILEGES;\""
-
-=end
