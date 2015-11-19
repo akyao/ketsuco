@@ -12,6 +12,8 @@ POST    /cron_table/save            controllers.CronTableC.save
 GET     /cron_table/show/:cronHash  controllers.CronTableC.show(cronHash:String)
 GET     /cron_table/show/sample     controllers.CronTableC.sample
 
+# mini
+GET     /image_load                 controllers.MiniC.imageLoad
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

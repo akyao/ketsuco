@@ -1,0 +1,26 @@
+@()
+
+<html>
+<head>
+<title>画像のURLを貼ってまとめて見るだけのページ</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+  $("#imgUrls").blur(function(){
+    $("#fuck").empty();
+    var urls = $("#imgUrls").val();
+    var urlList = urls.split("\n");
+    for(var i = 0; i< urlList.length; i++){
+      var url = urlList[i];
+      url = url.replace(/["'<>"]/, "");
+      $("#fuck").append("<img src='" + url + "'' style='widht:200px;height:200px'>")
+    }
+  });
+});
+</script>
+</head>
+<body>
+  <textarea id="imgUrls" cols="100" rows="6"></textarea>
+  <div id="fuck"></div>
+</body>
+</html>
