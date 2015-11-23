@@ -1,0 +1,19 @@
+テーブル作成とモデル生成のフロー
+
+
+- conf/evolutions.default/x.sql を作成する
+- DDLをDBに反映する
+-- activator runで起動
+-- localhost:9000の画面アクセス
+-- evolutionを実行すするかと聞かれるので「Apply script」
+
+- downするときは、以下を記述して実行
+-- # -DapplyDownEvolutions.default=true
+
+DB定義を元にモデルを生成する
+- sbt "scalikejdbcGen table_name"
+
+
+
+Generation Gapパターンとか使えないの？
+
