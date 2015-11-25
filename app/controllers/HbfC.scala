@@ -38,23 +38,26 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     Ok(views.html.hbf.edit(form))
   }
 
-  def save = Action { implicit request =>
 
-    // RSSを読み込み、記事のURL一覧を返す
-    def rssUrl2UrlList(rssUrl:String) :Seq[String] = {
-      // TODO 変数名がきたねえよ
+
+  def save = Action { implicit request =>
+    case class RssFeed(link:String, title:String, entryList:Seq[String])
+    // RSSのURLを元にRSSフィード情報を取得します
+    def loadRss(rssUrl:String) :RssFeed = {
       val future = ws.url(rssUrl).get()
-      val unko = future.map { res =>
-        val gero:Seq[String] = res.xml \ "entry" \ "link" map { feed =>
+      val rssFeed = future.map { res =>
+        val link:String = (res.xml \ "link" \ "@href").head.toString()
+        val title:String = (res.xml \ "title").head.text
+        val entryList:Seq[String] = res.xml \ "entry" \ "link" map { feed =>
           feed.attribute("href").get.toString()
         }
-        gero
+        RssFeed(link, title, entryList)
       }
-      return Await.result(unko, Duration.Inf)
+      return Await.result(rssFeed, Duration.Inf)
     }
 
-    // 記事の一覧を取得し、URLとそのブックマーク件数のリストを返す
-    def urlList2BookmarkCountList(urlList:Seq[String]) : Map[String, Int] = {
+    // 記事の一覧を取得し、URLとそのブックマーク件数のリストを取得します
+    def fetchBookmarkCountList(urlList:Seq[String]) : Map[String, Int] = {
       // http://developer.hatena.ne.jp/ja/documents/bookmark/apis/getcount
       // TODO URLエスケープ
 
@@ -70,7 +73,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
       return Await.result(unko, Duration.Inf)
     }
 
-    def url2BookmarkInfo(url:String) : Seq[String]= {
+    def fetchBookmarkInfo(url:String) : Seq[String]= {
       // http://developer.hatena.ne.jp/ja/documents/bookmark/apis/getinfo
       val apiUrl = "http://b.hatena.ne.jp/entry/jsonlite/?url=" + url
       val future = ws.url(apiUrl).get()
@@ -83,20 +86,20 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     }
 
     // TODO siteUrl -> baseUrl
-
     // TODO baseUrl -> rssUrl
+
     val rssUrl = "http://jkondo.hatenablog.com/feed"
 
     // rssUrl -> urlList
-    val urlList = rssUrl2UrlList(rssUrl)
+    val rssFeed = loadRss(rssUrl)
 
     // urlList ->
-    val bookMarkList = urlList2BookmarkCountList(urlList)
+    val bookMarkList = fetchBookmarkCountList(rssFeed.entryList)
 
     for (tup <- bookMarkList) {
 // TODO     if (tup._2 > 0) {
       if (tup._2 == 25) { // TODO test
-        val bookmarkInfo = url2BookmarkInfo(tup._1)
+        val bookmarkInfo = fetchBookmarkInfo(tup._1)
         // TODO bookmark情報を保存する
         println(bookmarkInfo)
 
