@@ -4,6 +4,7 @@ import java.util.Formatter.DateTime
 
 import org.joda.time.DateTime
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -98,41 +99,45 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     // urlList ->
     val bookMarkList = fetchBookmarkCountList(rssFeed.entryList)
 
-    // サイト情報の保存
-    // Optionでくるんで渡さないといけないとか馬鹿らしいな
-    val site = HbfSite.create(rssFeed.link,
-      Some(rssFeed.rssLink),
-      Some(rssFeed.title),
-      now,
-      now)
+    DB localTx { implicit session =>
+      // サイト情報の保存
+      // Optionでくるんで渡さないといけないとか馬鹿らしいな
+      val site = HbfSite.findBy(sqls.eq(HbfSite.syntax("hs").url, rssFeed.link))
+        .getOrElse(HbfSite.create(rssFeed.link, Some(rssFeed.rssLink), Some(rssFeed.title), now, now))
 
-    // TODO サイトやページ、ユーザーがすでにある場合
+      // TODO サイトやページ、ユーザーがすでにある場合
 
-    for (tup <- bookMarkList) {
-      // TODO     if (tup._2 > 0) {
-      if (tup._2 == 25) { // TODO test
-        // TODO 記事公開日を保存したい
-        val sitePage = HbfSitePage.create(
-          site.id,
-          tup._1,
-          createdAt = now,
-          updatedAt = now)
+      val userMap = mutable.HashMap[String, HbfUser]()
 
-        // TODO APIコール回数、迷惑かけない頻度にすること
-        val bookmarkInfo = fetchBookmarkInfo(tup._1)
-        // TODO ユーザーはまとめて検索しような？
-        for (userName <- bookmarkInfo) {
-          val user:HbfUser = HbfUser.findBy(sqls.eq(HbfUser.syntax("hu").userName, userName))
-            .getOrElse(HbfUser.create(Some(userName), now, now))
+      for (tup <- bookMarkList) {
+        // TODO     if (tup._2 > 0) {
+        if (tup._2 == 25) {
+          // TODO test
+          // TODO 記事公開日を保存したい
+          val sitePage = HbfSitePage.findBy(sqls.eq(HbfSitePage.syntax("hsp").url, tup._1))
+            .getOrElse(HbfSitePage.create(site.id, tup._1, createdAt = now, updatedAt = now))
 
-          // TODO bookmarkは全消ししてぶっこむ
-          // TODO bookmark情報を保存する
-          HbfBookmark.create(sitePage.id, user.id, now, now)
+          // bookmarkは全消ししてぶっこむ
+          // TODO HbfBookmarkのメソッドに追加したい。HbfBookmarkファイルは編集したくない
+          sql"DELETE FROM hbf_bookmark WHERE hbf_site_page_id = ${sitePage.id}".update().apply()
+
+          // TODO APIコール回数、迷惑かけない頻度にすること
+          val bookmarkInfo = fetchBookmarkInfo(tup._1)
+          // TODO ユーザーはまとめて検索しような？
+          for (userName <- bookmarkInfo) {
+            // mapから検索して、なければDB検索、それもなければ生成
+            val user: HbfUser = userMap.getOrElse(userName, HbfUser.findBy(sqls.eq(HbfUser.syntax("hu").userName, userName))
+              .getOrElse(HbfUser.create(Some(userName), now, now)))
+
+            userMap.put(userName, user)
+
+            // TODO bookmark情報を保存する
+            HbfBookmark.create(sitePage.id, user.id, now, now)
+          }
+
         }
-
       }
     }
-
     Redirect(routes.HbfC.show("fff"))
   }
 
