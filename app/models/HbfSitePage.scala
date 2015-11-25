@@ -6,7 +6,7 @@ import org.joda.time.{DateTime}
 case class HbfSitePage(
   id: Long,
   hbfSiteId: Long,
-  url: Long,
+  url: String,
   entryAt: Option[DateTime] = None,
   createdAt: Option[DateTime] = None,
   updatedAt: Option[DateTime] = None) {
@@ -74,7 +74,7 @@ object HbfSitePage extends SQLSyntaxSupport[HbfSitePage] {
 
   def create(
     hbfSiteId: Long,
-    url: Long,
+    url: String,
     entryAt: Option[DateTime] = None,
     createdAt: Option[DateTime] = None,
     updatedAt: Option[DateTime] = None)(implicit session: DBSession = autoSession): HbfSitePage = {

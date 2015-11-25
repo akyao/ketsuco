@@ -5,7 +5,9 @@ import org.joda.time.{DateTime}
 
 case class HbfSite(
   id: Long,
-  url: Long,
+  url: String,
+  rssUrl: Option[String] = None,
+  title: Option[String] = None,
   createdAt: Option[DateTime] = None,
   updatedAt: Option[DateTime] = None) {
 
@@ -22,12 +24,14 @@ object HbfSite extends SQLSyntaxSupport[HbfSite] {
 
   override val tableName = "hbf_site"
 
-  override val columns = Seq("id", "url", "created_at", "updated_at")
+  override val columns = Seq("id", "url", "rss_url", "title", "created_at", "updated_at")
 
   def apply(hs: SyntaxProvider[HbfSite])(rs: WrappedResultSet): HbfSite = apply(hs.resultName)(rs)
   def apply(hs: ResultName[HbfSite])(rs: WrappedResultSet): HbfSite = new HbfSite(
     id = rs.get(hs.id),
     url = rs.get(hs.url),
+    rssUrl = rs.get(hs.rssUrl),
+    title = rs.get(hs.title),
     createdAt = rs.get(hs.createdAt),
     updatedAt = rs.get(hs.updatedAt)
   )
@@ -69,16 +73,22 @@ object HbfSite extends SQLSyntaxSupport[HbfSite] {
   }
 
   def create(
-    url: Long,
+    url: String,
+    rssUrl: Option[String] = None,
+    title: Option[String] = None,
     createdAt: Option[DateTime] = None,
     updatedAt: Option[DateTime] = None)(implicit session: DBSession = autoSession): HbfSite = {
     val generatedKey = withSQL {
       insert.into(HbfSite).columns(
         column.url,
+        column.rssUrl,
+        column.title,
         column.createdAt,
         column.updatedAt
       ).values(
         url,
+        rssUrl,
+        title,
         createdAt,
         updatedAt
       )
@@ -87,6 +97,8 @@ object HbfSite extends SQLSyntaxSupport[HbfSite] {
     HbfSite(
       id = generatedKey,
       url = url,
+      rssUrl = rssUrl,
+      title = title,
       createdAt = createdAt,
       updatedAt = updatedAt)
   }
@@ -95,14 +107,20 @@ object HbfSite extends SQLSyntaxSupport[HbfSite] {
     val params: Seq[Seq[(Symbol, Any)]] = entities.map(entity => 
       Seq(
         'url -> entity.url,
+        'rssUrl -> entity.rssUrl,
+        'title -> entity.title,
         'createdAt -> entity.createdAt,
         'updatedAt -> entity.updatedAt))
         SQL("""insert into hbf_site(
         url,
+        rss_url,
+        title,
         created_at,
         updated_at
       ) values (
         {url},
+        {rssUrl},
+        {title},
         {createdAt},
         {updatedAt}
       )""").batchByName(params: _*).apply()
@@ -113,6 +131,8 @@ object HbfSite extends SQLSyntaxSupport[HbfSite] {
       update(HbfSite).set(
         column.id -> entity.id,
         column.url -> entity.url,
+        column.rssUrl -> entity.rssUrl,
+        column.title -> entity.title,
         column.createdAt -> entity.createdAt,
         column.updatedAt -> entity.updatedAt
       ).where.eq(column.id, entity.id)

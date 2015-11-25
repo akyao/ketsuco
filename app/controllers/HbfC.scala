@@ -2,6 +2,8 @@ package controllers
 
 import java.util.Formatter.DateTime
 
+import org.joda.time.DateTime
+
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -10,7 +12,7 @@ import javax.inject.Inject
 
 
 import form.HbfForm
-import models.{Cron, CronLine}
+import models._
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n._
@@ -38,10 +40,8 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     Ok(views.html.hbf.edit(form))
   }
 
-
-
   def save = Action { implicit request =>
-    case class RssFeed(link:String, title:String, entryList:Seq[String])
+    case class RssFeed(link:String, rssLink:String, title:String, entryList:Seq[String])
     // RSSのURLを元にRSSフィード情報を取得します
     def loadRss(rssUrl:String) :RssFeed = {
       val future = ws.url(rssUrl).get()
@@ -51,7 +51,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
         val entryList:Seq[String] = res.xml \ "entry" \ "link" map { feed =>
           feed.attribute("href").get.toString()
         }
-        RssFeed(link, title, entryList)
+        RssFeed(link, rssUrl, title, entryList)
       }
       return Await.result(rssFeed, Duration.Inf)
     }
@@ -79,11 +79,13 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
       val future = ws.url(apiUrl).get()
       val unko = future.map { res =>
         val chinko = res.json \ "bookmarks" \\ "user"
-        chinko.map(jsv => jsv.toString())
+        chinko.map(jsv => jsv.toString().replaceAll("\"", ""))
       }
 
       return Await.result(unko, Duration.Inf)
     }
+
+    val now = Some(DateTime.now())
 
     // TODO siteUrl -> baseUrl
     // TODO baseUrl -> rssUrl
@@ -96,14 +98,38 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     // urlList ->
     val bookMarkList = fetchBookmarkCountList(rssFeed.entryList)
 
+    // サイト情報の保存
+    // Optionでくるんで渡さないといけないとか馬鹿らしいな
+    val site = HbfSite.create(rssFeed.link,
+      Some(rssFeed.rssLink),
+      Some(rssFeed.title),
+      now,
+      now)
+
+    // TODO サイトやページ、ユーザーがすでにある場合
+
     for (tup <- bookMarkList) {
-// TODO     if (tup._2 > 0) {
+      // TODO     if (tup._2 > 0) {
       if (tup._2 == 25) { // TODO test
-        val bookmarkInfo = fetchBookmarkInfo(tup._1)
-        // TODO bookmark情報を保存する
-        println(bookmarkInfo)
+        // TODO 記事公開日を保存したい
+        val sitePage = HbfSitePage.create(
+          site.id,
+          tup._1,
+          createdAt = now,
+          updatedAt = now)
 
         // TODO APIコール回数、迷惑かけない頻度にすること
+        val bookmarkInfo = fetchBookmarkInfo(tup._1)
+        // TODO ユーザーはまとめて検索しような？
+        for (userName <- bookmarkInfo) {
+          val user:HbfUser = HbfUser.findBy(sqls.eq(HbfUser.syntax("hu").userName, userName))
+            .getOrElse(HbfUser.create(Some(userName), now, now))
+
+          // TODO bookmarkは全消ししてぶっこむ
+          // TODO bookmark情報を保存する
+          HbfBookmark.create(sitePage.id, user.id, now, now)
+        }
+
       }
     }
 
