@@ -1,8 +1,8 @@
-@()
+@(site:models.HbfSite, sitePageList:List[models.HbfSitePage], bookmarkList:Seq[dtos.BookmarkInfo])
 
 @import _root_.helpers._
 
 @layout("表示") {
-
+  @site.title
 
 }
