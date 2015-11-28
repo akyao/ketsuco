@@ -10,7 +10,7 @@
     @helper.form(action = routes.HbfC.save) {
       <div class="text-center">
         <div class="form-group">
-          @helper.textarea(f("url"),
+          @helper.inputText(f("url"),
             'class -> "form-control",
             '_showConstraints -> false,
             '_label -> "URL")

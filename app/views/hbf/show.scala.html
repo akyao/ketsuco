@@ -3,6 +3,27 @@
 @import _root_.helpers._
 
 @layout("表示") {
-  @site.title
-
+  <h1>「@site.title」のブックマークユーザー</h1>
+  <table class="table-bordered">
+    <thead>
+      <tr>
+        <td>ユーザーネーム</td>
+        <td>b数</td>
+        @for((page, idx) <- sitePageList.zipWithIndex) {
+          <td><a href="@{page.url}" target="_blank">@(idx+1)</a></td>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for(bk <- bookmarkList) {
+      <tr>
+        <td><a href="http://b.hatena.ne.jp/@{bk.userName}/" target="_blank">@bk.userName</a></td>
+        <td>@bk.getBookmarkCount()</td>
+        @for(page <- sitePageList) {
+          <td>@if(bk.getSitePageIdList().contains(page.id)){◯} else {-}</td>
+        }
+      </tr>
+      }
+    </tbody>
+  </table>
 }

@@ -3,6 +3,7 @@ package controllers
 import java.security.MessageDigest
 import javax.inject.Inject
 
+import exceptions.ValidatorException
 import form.CronForm
 import helpers.CronTimeHelper
 import models.{Cron, CronLine}
@@ -125,7 +126,4 @@ class CronTableC @Inject()(val messagesApi: MessagesApi) extends Controller with
       return cron
     }
   }
-
-  class ValidatorException(msg: String) extends RuntimeException(msg)
-
 }

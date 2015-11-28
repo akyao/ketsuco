@@ -13,22 +13,15 @@ import play.api.libs.ws.WSClient
 import play.api.mvc._
 import scalikejdbc._
 
+import exceptions.ValidatorException
+
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 
-//select hb.hbf_user_id, hu.user_name, count(1) as cnt, group_concat(hb.hbf_site_page_id) as page_ids from hbf_site_page hsp
-//inner join hbf_bookmark hb on hsp.id = hb.hbf_site_page_id
-//inner join hbf_user hu on hb.hbf_user_id = hu.id
-//where hsp.hbf_site_id = 3
-//group by hb.hbf_user_id
-//order by cnt desc
-
-//<link rel="alternate" type="application/atom+xml" title="Atom" href="http://cruel.hatenablog.com/feed"/>
-
-// @Inject ()の意味
+// @Inject ()ってなんすか？
 class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Controller with I18nSupport {
 
   def index = Action {
@@ -36,7 +29,6 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
   }
 
   def show(siteId: Long) = Action { implicit request =>
-
     DB localTx { implicit session =>
       val site = HbfSite.find(siteId)
       val sitePageList:List[HbfSitePage] = HbfSitePage.findAllBy(sqls.eq(HbfSitePage.syntax("hsp").hbfSiteId, siteId))
@@ -46,7 +38,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
   }
 
   def findBookmarkInfoList(siteId:Long): List[BookmarkInfo] = {
-    // TODO 変
+    // TODO txがネストしていてきもい
     DB localTx { implicit session =>
       sql"""
       select
@@ -57,9 +49,10 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
       from hbf_site_page hsp
       inner join hbf_bookmark hb on hsp.id = hb.hbf_site_page_id
       inner join hbf_user hu on hb.hbf_user_id = hu.id
-      where hsp.hbf_site_id = 3
+      where hsp.hbf_site_id = ${siteId}
       group by hb.hbf_user_id
       order by bookmarkCount desc
+      limit 100
       """.map(rs => BookmarkInfo(rs.string("userId"), rs.string("userName"), rs.int("bookmarkCount"), rs.string("sitePageIds"))).list.apply()
     }
   }
@@ -69,10 +62,51 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
   }
 
   def save = Action { implicit request =>
+    form.bindFromRequest.fold(
+      formWithErrors => {
+        BadRequest(views.html.hbf.edit(formWithErrors))
+      }, formData => {
+        try {
+          val rssUrl = fetchRssUrl(formData.url)
+          val site = doFuck(rssUrl)
+          Redirect(routes.HbfC.show(site.id))
+        } catch {
+          // バリデーションエラーの対応
+          case e: ValidatorException
+            => BadRequest(views.html.hbf.edit(form.bindFromRequest.withError("url", e.getMessage)))
+        }
+      }
+    )
+  }
+
+  def fetchRssUrl(url:String): String = {
+    // TODO 入力されたのがいきなりRSSフィードだったらどうするよ
+    try {
+      val rssUrl = ws.url(url).get().map { res =>
+
+        val elems = res.body.split("\n")
+          .filter(_.matches(".+application/((atom|rss)\\+)?xml.+"))
+          .map(fuck => scala.xml.XML.loadString(fuck.trim).attribute("href"))
+
+        if (elems.length == 0) {
+          throw new ValidatorException("RSSフィードが見つからないっす")
+        }
+
+        elems(0).get.toString()
+      }
+
+      return Await.result(rssUrl, Duration.Inf)
+    } catch {
+      case e: java.io.IOException
+        => throw new ValidatorException("URL読み込みに失敗しました")
+    }
+  }
+
+  def doFuck(rssUrl:String) : HbfSite = {
     case class RssFeed(link:String, rssLink:String, title:String, entryList:Seq[String])
 
     // RSSのURLを元にRSSフィード情報を取得します
-    def loadRss(rssUrl:String) :RssFeed = {
+    def loadRss() :RssFeed = {
       val future = ws.url(rssUrl).get()
       val rssFeed = future.map { res =>
         val link:String = (res.xml \ "link" \ "@href").head.toString()
@@ -88,7 +122,6 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     // 記事の一覧を取得し、URLとそのブックマーク件数のリストを取得します
     def fetchBookmarkCountList(urlList:Seq[String]) : Map[String, Int] = {
       // http://developer.hatena.ne.jp/ja/documents/bookmark/apis/getcount
-      // TODO URLエスケープ
 
       val paramList = urlList.map(url => "url=" + url)
       val apiQueryString = paramList.mkString("&")
@@ -116,15 +149,10 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
 
     val now = Some(DateTime.now())
 
-    // TODO siteUrl -> baseUrl
-    // TODO baseUrl -> rssUrl
-
-//    val rssUrl = "http://jkondo.hatenablog.com/feed"
-    val rssUrl = "http://cruel.hatenablog.com/feed"
     // TODO rssUrlで検索。更新から時間が立っていない場合はそれを表示。更新はしない
 
     // rssUrl -> urlList
-    val rssFeed = loadRss(rssUrl)
+    val rssFeed = loadRss()
 
     // urlList ->
     val bookMarkList = fetchBookmarkCountList(rssFeed.entryList)
@@ -135,14 +163,11 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
       val site = HbfSite.findBy(sqls.eq(HbfSite.syntax("hs").url, rssFeed.link))
         .getOrElse(HbfSite.create(rssFeed.link, Some(rssFeed.rssLink), Some(rssFeed.title), now, now))
 
-      // TODO サイトやページ、ユーザーがすでにある場合
-
       val userMap = mutable.HashMap[String, HbfUser]()
 
       for (tup <- bookMarkList) {
         if (tup._2 > 0) {
-//        if (tup._2 == 25) {
-          // TODO test
+
           // TODO 記事公開日を保存したい
           val sitePage = HbfSitePage.findBy(sqls.eq(HbfSitePage.syntax("hsp").url, tup._1))
             .getOrElse(HbfSitePage.create(site.id, tup._1, createdAt = now, updatedAt = now))
@@ -161,23 +186,21 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
 
             userMap.put(userName, user)
 
-            // TODO bookmark情報を保存する
+            // bookmark情報を保存する
             HbfBookmark.create(sitePage.id, user.id, now, now)
           }
         }
       }
 
-      Redirect(routes.HbfC.show(site.id))
+      return site
     }
   }
 
   val form = Form(
     mapping(
       "url" -> nonEmptyText
-        .verifying("16384文字以内で入力してください。", {
-        _.length <= 16384
-      })
+        .verifying("URLじゃなくね？", {_.matches("https?://[\\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+")})
+        .verifying("URLなが杉です", {_.length <= 256})
     )(HbfForm.apply)(HbfForm.unapply)
   )
-
 }
