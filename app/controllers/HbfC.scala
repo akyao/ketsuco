@@ -25,7 +25,9 @@ import scala.concurrent.duration.Duration
 class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Controller with I18nSupport {
 
   def index = Action {
-    Ok(views.html.hbf.index())
+    // TODO そのうちトップページ作る
+    //Ok(views.html.hbf.index())
+    Redirect(routes.HbfC.create())
   }
 
   def show(siteId: Long) = Action { implicit request =>
@@ -105,7 +107,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
   def doFuck(rssUrl:String) : HbfSite = {
     case class RssFeed(link:String, rssLink:String, title:String, entryList:Seq[String])
 
-    // RSSのURLを元にRSSフィード情報を取得します
+    /** RSSのURLを元にRSSフィード情報を取得します */
     def loadRss() :RssFeed = {
       val future = ws.url(rssUrl).get()
       val rssFeed = future.map { res =>
@@ -119,7 +121,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
       return Await.result(rssFeed, Duration.Inf)
     }
 
-    // 記事の一覧を取得し、URLとそのブックマーク件数のリストを取得します
+    /** 記事の一覧を取得し、URLとそのブックマーク件数のリストを取得します */
     def fetchBookmarkCountList(urlList:Seq[String]) : Map[String, Int] = {
       // http://developer.hatena.ne.jp/ja/documents/bookmark/apis/getcount
 
@@ -135,6 +137,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
       return Await.result(unko, Duration.Inf)
     }
 
+    /** ブックマーク情報を取得します */
     def fetchBookmarkInfo(url:String) : Seq[String]= {
       // http://developer.hatena.ne.jp/ja/documents/bookmark/apis/getinfo
       val apiUrl = "http://b.hatena.ne.jp/entry/jsonlite/?url=" + url
@@ -149,7 +152,11 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
 
     val now = Some(DateTime.now())
 
-    // TODO rssUrlで検索。更新から時間が立っていない場合はそれを表示。更新はしない
+    // 更新から時間が立っていない場合はそのままでいい
+    var site = HbfSite.findBy(sqls.eq(HbfSite.syntax("hs").rssUrl, rssUrl))
+    if (site != null && site.get.updatedAt.get.isAfter(now.get.minusDays(1))) {
+      return site.get
+    }
 
     // rssUrl -> urlList
     val rssFeed = loadRss()
@@ -171,6 +178,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
           // TODO 記事公開日を保存したい
           val sitePage = HbfSitePage.findBy(sqls.eq(HbfSitePage.syntax("hsp").url, tup._1))
             .getOrElse(HbfSitePage.create(site.id, tup._1, createdAt = now, updatedAt = now))
+          updateUpdatedAt(HbfSitePage, now.get, sitePage.id)
 
           // bookmarkは全消ししてぶっこむ
           // TODO HbfBookmarkのメソッドに追加したい。HbfBookmarkファイルは編集したくない
@@ -183,6 +191,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
             // mapから検索して、なければDB検索、それもなければ生成
             val user: HbfUser = userMap.getOrElse(userName, HbfUser.findBy(sqls.eq(HbfUser.syntax("hu").userName, userName))
               .getOrElse(HbfUser.create(Some(userName), now, now)))
+            updateUpdatedAt(HbfUser, now.get, user.id)
 
             userMap.put(userName, user)
 
@@ -192,8 +201,14 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
         }
       }
 
+      updateUpdatedAt(HbfSite, now.get, site.id)
+
       return site
     }
+  }
+
+  def updateUpdatedAt(entity:SQLSyntaxSupport[_], time:DateTime, id:Long)(implicit session:DBSession): Unit = {
+    sql"update ${entity.table} set updated_at = now() where id = ${id}".update.apply()
   }
 
   val form = Form(
