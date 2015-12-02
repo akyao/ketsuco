@@ -3,14 +3,15 @@
 @import _root_.helpers._
 
 @layout("表示") {
+<div class="container">
   <h1>「@site.title」のブックマークユーザー</h1>
-  <table class="table-bordered">
+  <table class="table-bordered fuck">
     <thead>
       <tr>
         <td>ユーザー名</td>
-        <td>b数</td>
+        <td>B!数</td>
         @for((page, idx) <- sitePageList.zipWithIndex) {
-          <td><a href="@{page.url}" target="_blank">@(idx+1)</a></td>
+          <td class="bk_yn"><a href="@{page.url}" target="_blank">@(idx+1)</a></td>
         }
       </tr>
     </thead>
@@ -18,12 +19,13 @@
       @for(bk <- bookmarkList) {
       <tr>
         <td><a href="http://b.hatena.ne.jp/@{bk.userName}/" target="_blank">@bk.userName</a></td>
-        <td>@bk.getBookmarkCount()</td>
+        <td class="bk_cnt">@bk.getBookmarkCount()</td>
         @for(page <- sitePageList) {
-          <td>@if(bk.getSitePageIdList().contains(page.id)){◯} else {-}</td>
+          <td class="bk_yn">@if(bk.getSitePageIdList().contains(page.id)){◯} else {-}</td>
         }
       </tr>
       }
     </tbody>
   </table>
+</div>
 }

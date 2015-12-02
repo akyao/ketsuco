@@ -33,6 +33,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
   def show(siteId: Long) = Action { implicit request =>
     DB localTx { implicit session =>
       val site = HbfSite.find(siteId)
+      // TODO 古い時は更新すること
       val sitePageList:List[HbfSitePage] = HbfSitePage.findAllBy(sqls.eq(HbfSitePage.syntax("hsp").hbfSiteId, siteId))
       val bookmarkList:List[BookmarkInfo] = findBookmarkInfoList(siteId)
       Ok(views.html.hbf.show(site.get, sitePageList, bookmarkList))
@@ -87,7 +88,8 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
       val rssUrl = ws.url(url).get().map { res =>
 
         val elems = res.body.split("\n")
-          .filter(_.matches(".+application/((atom|rss)\\+)?xml.+"))
+//          .filter(_.matches(".+application\\/((atom|rss)\\+)?xml.+")) とりあえずatomだけ. TODO 追加する場合はloadRss()の改修必要
+          .filter(_.matches(".+application\\/(atom\\+)?xml.+"))
           .map(fuck => scala.xml.XML.loadString(fuck.trim).attribute("href"))
 
         if (elems.length == 0) {
@@ -109,9 +111,11 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
 
     /** RSSのURLを元にRSSフィード情報を取得します */
     def loadRss() :RssFeed = {
+
       val future = ws.url(rssUrl).get()
       val rssFeed = future.map { res =>
-        val link:String = (res.xml \ "link" \ "@href").head.toString()
+        val link:String = (res.xml \ "link").map(_.attribute("href").get.toString()).head
+//        val link:String = (res.xml \ "link" \ "@href").head.toString() エラーになる場合があった
         val title:String = (res.xml \ "title").head.text
         val entryList:Seq[String] = res.xml \ "entry" \ "link" map { feed =>
           feed.attribute("href").get.toString()
@@ -154,14 +158,12 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
 
     // 更新から時間が立っていない場合はそのままでいい
     var site = HbfSite.findBy(sqls.eq(HbfSite.syntax("hs").rssUrl, rssUrl))
-    if (site != null && site.get.updatedAt.get.isAfter(now.get.minusDays(1))) {
+    if (site.isDefined && site.get.updatedAt.get.isAfter(now.get.minusDays(1))) {
       return site.get
     }
 
-    // rssUrl -> urlList
     val rssFeed = loadRss()
 
-    // urlList ->
     val bookMarkList = fetchBookmarkCountList(rssFeed.entryList)
 
     DB localTx { implicit session =>

@@ -1,0 +1,76 @@
+/** layout */
+header{
+    background-color: #555273;
+    height: 72px;
+    width: 100%;
+    line-height: 72px;
+    color: #b6d5e1;
+}
+
+body {
+    /** フッターがせり上がってこないように */
+    height:100%
+}
+
+.wrapper {
+    min-height:100%
+}
+
+footer{
+    background-color: #555273;
+    height: 36px;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.8);
+    position:absolute;
+    #bottom:0;
+}
+
+.wrapper{
+    margin-top:20px;
+}
+
+body{
+    color: #555273;
+}
+
+.title{
+    font-size:2.6em;
+    letter-spacing:0.036em;
+}
+    .title a{
+        color:#ccc;
+        text-decoration:none;
+    }
+
+/** show **/
+.fuck td {
+    padding:2px 4px;
+}
+
+/** edit **/
+.edit_form{
+    width:800px;
+    padding-left:100px;
+}
+
+.btn-save{
+    padding:10px 40px;
+}
+
+dd.error{
+    font-size:1.4em;
+    font-weight: bold;
+    color: #f65068;
+}
+
+.bk_cnt {
+    text-align:right;
+    margin:10px 40px;
+}
+
+.bk_yn{
+    width:24px;
+    text-align: center;
+    vertical-align: center;
+}
+
