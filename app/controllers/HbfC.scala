@@ -226,8 +226,8 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
   val form = Form(
     mapping(
       "url" -> nonEmptyText
-        .verifying("URLじゃなくね？", {_.matches("https?://[\\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+")})
-        .verifying("URLなが杉です", {_.length <= 256})
+        .verifying("URLじゃないのでは？", {_.matches("https?://[\\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+")})
+        .verifying("URL長すぎます。。", {_.length <= 256})
     )(HbfForm.apply)(HbfForm.unapply)
   )
 }
