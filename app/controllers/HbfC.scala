@@ -4,7 +4,9 @@ import javax.inject.Inject
 
 import dtos.BookmarkInfo
 import form.HbfForm
+import helpers.{RssFeed, HbfRssReader}
 import models._
+
 import org.joda.time.DateTime
 import play.api.data.Forms._
 import play.api.data._
@@ -82,21 +84,21 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     )
   }
 
-  def fetchRssUrl(url:String): String = {
+  def fetchRssUrl(url:String): Array[String] = {
     // TODO 入力されたのがいきなりRSSフィードだったらどうするよ
     try {
       val rssUrl = ws.url(url).get().map { res =>
-
         val elems = res.body.split("\n")
 //          .filter(_.matches(".+application\\/((atom|rss)\\+)?xml.+")) とりあえずatomだけ. TODO 追加する場合はloadRss()の改修必要
-          .filter(_.matches(".+application\\/(atom\\+)?xml.+"))
-          .map(fuck => scala.xml.XML.loadString(fuck.trim).attribute("href"))
+          .filter(_.matches(".+application\\/((atom|rss)\\+)?xml.+"))
+//          .map(fuck => scala.xml.XML.loadString(fuck.trim).attribute("href"))
+          .map(s => scala.xml.XML.loadString(s.replaceAll("""/?>""", "/>")).attribute("href").get)
 
         if (elems.length == 0) {
           throw new ValidatorException("RSSフィードが見つからないっす")
         }
 
-        elems(0).get.toString()
+        elems.map(_.toString)
       }
 
       return Await.result(rssUrl, Duration.Inf)
@@ -106,23 +108,21 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
     }
   }
 
-  def doFuck(rssUrl:String) : HbfSite = {
-    case class RssFeed(link:String, rssLink:String, title:String, entryList:Seq[String])
+  def doFuck(rssUrls:Seq[String]) : HbfSite = {
 
     /** RSSのURLを元にRSSフィード情報を取得します */
-    def loadRss() :RssFeed = {
-
-      val future = ws.url(rssUrl).get()
-      val rssFeed = future.map { res =>
-        val link:String = (res.xml \ "link").map(_.attribute("href").get.toString()).head
-//        val link:String = (res.xml \ "link" \ "@href").head.toString() エラーになる場合があった
-        val title:String = (res.xml \ "title").head.text
-        val entryList:Seq[String] = res.xml \ "entry" \ "link" map { feed =>
-          feed.attribute("href").get.toString()
+    def loadRss():RssFeed = {
+      // TODO クソみたいなコード書きやがって
+      rssUrls.foreach(u =>
+        try {
+          return HbfRssReader.loadRss(ws, u)
+        } catch {
+          case e: ValidatorException
+            =>
         }
-        RssFeed(link, rssUrl, title, entryList)
-      }
-      return Await.result(rssFeed, Duration.Inf)
+      )
+//      return HbfRssReader.loadRss(ws, "")
+      throw new ValidatorException("RSSが読み込めません")
     }
 
     /** 記事の一覧を取得し、URLとそのブックマーク件数のリストを取得します */
@@ -156,13 +156,13 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
 
     val now = Some(DateTime.now())
 
+    val rssFeed = loadRss()
+
     // 更新から時間が立っていない場合はそのままでいい
-    var site = HbfSite.findBy(sqls.eq(HbfSite.syntax("hs").rssUrl, rssUrl))
+    var site = HbfSite.findBy(sqls.eq(HbfSite.syntax("hs").rssUrl, rssFeed.rssLink))
     if (site.isDefined && site.get.updatedAt.get.isAfter(now.get.minusDays(1))) {
       return site.get
     }
-
-    val rssFeed = loadRss()
 
     val bookMarkList = fetchBookmarkCountList(rssFeed.entryList)
 
