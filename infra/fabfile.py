@@ -31,7 +31,8 @@ def deploy():
         # 旧アプリ停止
         if exists("latest"):
             if exists("latest/RUNNING_PID"):
-                run("kill `cat latest/RUNNING_PID`", shell=False)
+                #sudo("kill `cat latest/RUNNING_PID`", shell=False)
+                sudo("kill `cat latest/RUNNING_PID`", user="root")
 
             #run("ls -la latest | cut -d' ' -f 13 | xargs rm -rf") # シンボリックリンク先削除
             run("rm -f latest")
@@ -43,8 +44,9 @@ def deploy():
         run_cmd = "latest/bin/ketsuco -Dplay.crypto.secret={} -Dplay.evolutions.db.default.autoApply=true > /dev/null 2>&1".format(secret_key)
 
         #__runbg(run_cmd)
+        # sudo("nohup latest/bin/ketsuco -Dplay.crypto.secret={} -Dplay.evolutions.db.default.autoApply=true > /dev/null 2>&1 &".format(secret_key), pty=False)
         #run("nohup latest/bin/ketsuco -Dplay.crypto.secret={} -Dplay.evolutions.db.default.autoApply=true > /dev/null 2>&1 &".format(secret_key), pty=False)
-        #TODO run("latest/bin/ketsuco -Dplay.crypto.secret={} -Dhttp.port=80 -Dplay.evolutions.db.default.autoApply=true > /dev/null 2>&1 &".format(secret_key), pty=False)
+        sudo("latest/bin/ketsuco -Dplay.crypto.secret={} -Dhttp.port=80 -Dplay.evolutions.db.default.autoApply=true > /dev/null 2>&1 &".format(secret_key), pty=False)
 
 @task
 def mig():
