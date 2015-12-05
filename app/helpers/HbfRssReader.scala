@@ -1,6 +1,11 @@
 package helpers
 
+import javax.xml.XMLConstants
+import javax.xml.parsers.SAXParserFactory
+
 import exceptions.ValidatorException
+import org.apache.xerces.impl.Constants
+import play.api._
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.Await
@@ -34,7 +39,6 @@ class HbfAtomReader extends HbfRssReader{
     val future = ws.url(rssUrl).get()
     val rssFeed = future.map { res =>
       val link:String = (res.xml \ "link").map(_.attribute("href").get.toString()).head
-      //        val link:String = (res.xml \ "link" \ "@href").head.toString() エラーになる場合があった
       val title:String = (res.xml \ "title").head.text
       val entryList:Seq[String] = res.xml \ "entry" \ "link" map { feed =>
         feed.attribute("href").get.toString()
@@ -46,12 +50,23 @@ class HbfAtomReader extends HbfRssReader{
 }
 
 object HbfRssReader {
+  def XML = scala.xml.XML.withSAXParser(xercesSaxParserFactory.newSAXParser())
+  val xercesSaxParserFactory =
+    SAXParserFactory.newInstance("org.apache.xerces.jaxp.SAXParserFactoryImpl", Play.getClass.getClassLoader)
+  xercesSaxParserFactory.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_GENERAL_ENTITIES_FEATURE, false)
+  xercesSaxParserFactory.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_PARAMETER_ENTITIES_FEATURE, false)
+  xercesSaxParserFactory.setFeature(Constants.XERCES_FEATURE_PREFIX + Constants.DISALLOW_DOCTYPE_DECL_FEATURE, true)
+  xercesSaxParserFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+
+  // TODO An invalid XML character (Unicode: 0x8) was found in the element content of the document
+  // TODO https://moneyforward.com/engineers_blog/
   def loadRss(ws: WSClient, rssUrl:String) :RssFeed = {
-    println(rssUrl)
+
     val future = ws.url(rssUrl).get()
     val rssFeed = future.map { res =>
       // http://argius.hatenablog.jp/entry/20130830/1377867921
-      res.xml.label.toLowerCase match {
+      val xml = XML.loadString(res.body.trim)
+      xml.label.toLowerCase match {
         case "rss" =>
           (res.xml \ "@version").text match {
             case "2.0" => new HbfRss2Reader().loadRss(ws, rssUrl)

@@ -1,13 +1,16 @@
 package controllers
 
+import java.io.StringReader
 import javax.inject.Inject
 
 import dtos.BookmarkInfo
 import form.HbfForm
 import helpers.{RssFeed, HbfRssReader}
 import models._
+import nu.validator.htmlparser.dom.HtmlDocumentBuilder
 
 import org.joda.time.DateTime
+import org.xml.sax.InputSource
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n._
@@ -18,6 +21,7 @@ import scalikejdbc._
 import exceptions.ValidatorException
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -79,33 +83,39 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
           // バリデーションエラーの対応
           case e: ValidatorException
             => BadRequest(views.html.hbf.edit(form.bindFromRequest.withError("url", e.getMessage)))
+          case e: Throwable
+            => throw e
         }
       }
     )
   }
 
-  def fetchRssUrl(url:String): Array[String] = {
+  def fetchRssUrl(url:String): Seq[String] = {
     // TODO 入力されたのがいきなりRSSフィードだったらどうするよ
-    try {
-      val rssUrl = ws.url(url).get().map { res =>
-        val elems = res.body.split("\n")
-//          .filter(_.matches(".+application\\/((atom|rss)\\+)?xml.+")) とりあえずatomだけ. TODO 追加する場合はloadRss()の改修必要
-          .filter(_.matches(".+application\\/((atom|rss)\\+)?xml.+"))
-//          .map(fuck => scala.xml.XML.loadString(fuck.trim).attribute("href"))
-          .map(s => scala.xml.XML.loadString(s.replaceAll("""/?>""", "/>")).attribute("href").get)
 
-        if (elems.length == 0) {
-          throw new ValidatorException("RSSフィードが見つからないっす")
+    val rssUrl = ws.url(url).get().map { res =>
+      val builder = new HtmlDocumentBuilder()
+      val sreader = new StringReader(res.body)
+      val dom = builder.parse(new InputSource(sreader))
+      val elems = dom.getElementsByTagName("link")
+
+      var rssUrls = ListBuffer[String]()
+      for (i <- 0 to elems.getLength) {
+        val elem = elems.item(i)
+        if (elem != null) {
+          val attMap = elem.getAttributes()
+          val attType = attMap.getNamedItem("type")
+          if (attType != null && attType.getNodeValue.matches("application\\/((atom|rss)\\+)?xml")) {
+            val attHref = attMap.getNamedItem("href")
+            if( attHref != null ) {
+              rssUrls += attHref.getNodeValue
+            }
+          }
         }
-
-        elems.map(_.toString)
       }
-
-      return Await.result(rssUrl, Duration.Inf)
-    } catch {
-      case e: java.io.IOException
-        => throw new ValidatorException("URL読み込みに失敗しました")
+      rssUrls
     }
+    return Await.result(rssUrl, Duration.Inf)
   }
 
   def doFuck(rssUrls:Seq[String]) : HbfSite = {
@@ -121,7 +131,7 @@ class HbfC @Inject()(val messagesApi: MessagesApi) (ws: WSClient) extends Contro
             =>
         }
       )
-//      return HbfRssReader.loadRss(ws, "")
+
       throw new ValidatorException("RSSが読み込めません")
     }
 

@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
 //  "com.typesafe.slick" %% "slick" % "3.0.0",
 //  "com.typesafe.play" %% "play-slick" % "1.0.1",
 //  "com.typesafe.play" %% "play-slick-evolutions" % "1.0.1",
+  "nu.validator.htmlparser" % "htmlparser" % "1.4",
   evolutions,
   specs2 % Test
 )
